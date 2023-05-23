@@ -35,7 +35,7 @@ int Throttle = 0;
 int Roll = 0;
 int Pitch = 0;
 
-const uint64_t pipeOut = 0xE9E8F0F0E1LL;
+const uint64_t pipeOut = 000322;
 RF24 radio(22, 21);
 
 // Setting up what the signal would look like
@@ -62,10 +62,12 @@ void setup(){
     Serial.begin(115200);
 
     radio.begin();
+
+    radio.openWritingPipe(pipeOut);
     radio.setAutoAck(false);
     radio.setDataRate(RF24_250KBPS);
-    radio.openWritingPipe(pipeOut);
-
+    radio.setPALevel(RF24_PA_MAX);
+    radio.stopListening();
     DataReset();
 }
 
