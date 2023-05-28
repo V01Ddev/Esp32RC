@@ -35,8 +35,15 @@ int Throttle = 0;
 int Roll = 0;
 int Pitch = 0;
 
-const uint64_t pipeOut = 000322;
-RF24 radio(22, 21);
+#define CEpin 22
+#define CSNpin 21
+#define SCKpin 18
+#define MOSIpin 23
+#define MISOpin 19
+
+
+const byte pipeOut = 2006;
+RF24 radio(CEpin, CSNpin);
 
 // Setting up what the signal would look like
 struct Signal {
@@ -46,9 +53,11 @@ struct Signal {
     byte yaw;
 };
 
-
-// To run if signal is lost
+// Variable using the data struct of Signal
+/*
 Signal data;
+
+
 void DataReset(){
     data.throttle = 128;
     data.pitch = 128;
@@ -56,19 +65,29 @@ void DataReset(){
     data.yaw = 128;
 }
 
+*/
 
 
 void setup(){
     Serial.begin(115200);
 
+    pinMode(RightXPIN, INPUT);
+    pinMode(RightYPIN, INPUT);
+
+    pinMode(LeftXPIN, INPUT);
+    pinMode(LeftYPIN, INPUT);
+    
+    delay(3000);
+
+
     radio.begin();
 
+    // Radio config
+
+    radio.begin();
     radio.openWritingPipe(pipeOut);
-    radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setPALevel(RF24_PA_MAX);
-    radio.stopListening();
-    DataReset();
+
+    Serial.println("Radio started...");
 }
 
 
@@ -82,22 +101,30 @@ void loop(){
     Roll = map(analogRead(RightYPIN), 0, 4095, 0, 255);
     Pitch = map(analogRead(RightXPIN), 0, 4095, 0, 255);
 
-    Serial.print("Throttle: ");
-    Serial.println(Throttle);
-
-    Serial.print("Yaw: ");
-    Serial.println(Yaw);
-
-    Serial.print("Pitch: ");
-    Serial.println(Pitch);
-
-    Serial.print("Roll: ");
-    Serial.println(Roll);
-
+    /*
     data.throttle = Throttle;
     data.pitch = Pitch;
     data.roll = Roll;
     data.yaw = Yaw;
 
-    radio.write(&data, sizeof(Signal));
+    Serial.print("Throttle: ");
+    Serial.println(data.throttle);
+
+    Serial.print("Yaw: ");
+    Serial.println(data.yaw);
+
+    Serial.print("Pitch: ");
+    Serial.println(data.pitch);
+
+    Serial.print("Roll: ");
+    Serial.println(data.roll);
+    */
+
+    char txt[] = "Hello World"; 
+
+    radio.write(&txt, sizeof(txt));
+
+    Serial.println("sent shit");
+
+    delay(300);
 }

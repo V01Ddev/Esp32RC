@@ -1,15 +1,17 @@
 #!/bin/bash
 
+# exit if command fails
+set -e
 
-# eg --> "/dev/ttyUSB0"
-MCP="/dev/ttyUSB0"
+# Port eg --> "/dev/ttyUSB0"
+MCP="/dev/ttyUSB1"
 
-
+# Filename
 FN="Transmitter.ino"
-
 
 # eg --> "esp32:esp32:esp32-poe-iso"
 Board="esp32:esp32:esp32-poe-iso" 
+
 
 arduino-cli compile --fqbn $Board $FN
 

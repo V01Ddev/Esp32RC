@@ -1,5 +1,6 @@
 #!/bin/bash
-MCP="/dev/ttyUSB0" # Port to be used (eg: "/dev/ttyUSB0")
 
+# Port to be used (eg: "/dev/ttyUSB0")
+MCP="/dev/ttyUSB1" 
 
 putty $MCP -serial -sercfg 115200
