@@ -4,7 +4,7 @@
 set -e
 
 # Port eg --> "/dev/ttyUSB0"
-MCP="/dev/ttyUSB1"
+MCP="/dev/ttyUSB0"
 
 # Filename
 FN="Transmitter.ino"

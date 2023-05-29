@@ -1,43 +1,36 @@
 #include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
-
+#include "WiFi.h"
+#include <esp_now.h>
 
 
 /*
-left stick:
-    X-axis = D35 (throttle)
-    Y-axis = D34 (yaw)
+   left stick:
+   X-axis = D35 (throttle)
+   Y-axis = D34 (yaw)
 
-right stick:
-    X-axis = D33 (pitch)
-    Y-axis = D32 (roll)
+   right stick:
+   X-axis = D33 (pitch)
+   Y-axis = D32 (roll)
 
-transmitter pins:
-1 ground
-2 3.3V Note (10uF cap across ground and 3.3V)
-3 (CE) 22   MAYBE 17
-4 (CSN) 21  MAYBE 5
-5 (SCK) 18
-6 (MOSI) 23
-7 (MISO) 19
-*/
+   transmitter pins:
+   1 ground
+   2 3.3V Note (10uF cap across ground and 3.3V)
+   3 (CE) 22   MAYBE 17
+   4 (CSN) 21  MAYBE 5
+   5 (SCK) 18
+   6 (MOSI) 23
+   7 (MISO) 19
+ */
 
 
-int Yaw = 128;
-int Throttle = 128;
+int Throttle = 0;
 int Roll = 128;
 int Pitch = 128;
+int Yaw = 128;
 
-
-#define CEpin 17
-#define CSNpin 5
-#define SCKpin 18
-#define MOSIpin 23
-#define MISOpin 19
-
-const uint64_t pipeIn = 2006;
-RF24 radio(CEpin, CSNpin);
+unsigned long now;
+unsigned long LastRec;
+unsigned long NxtRcv;
 
 // Setting up what the signal would look like
 struct Signal {
@@ -47,86 +40,78 @@ struct Signal {
     byte yaw;
 };
 
-
-/*
-
 Signal data;
+
+
 // To run if signal is lost
 void DataReset(){
-    data.throttle = 128;
+    data.throttle = 0;
     data.pitch = 128;
     data.roll = 128;
     data.yaw = 128;
 }
 
-*/
 
+
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+
+    memcpy(&data, incomingData, sizeof(Signal));
+
+    Throttle = data.throttle;
+    Pitch = data.pitch;
+    Roll = data.roll;
+    Yaw = data.yaw;
+    
+    LastRec = millis() / 1000;
+    NxtRcv = LastRec + 3;
+
+    /*
+       Serial.print("Throttle: ");
+       Serial.println(data.throttle);
+
+       Serial.print("Yaw: ");
+       Serial.println(data.yaw);
+
+       Serial.print("Pitch: ");
+       Serial.println(data.pitch);
+
+       Serial.print("Roll: ");
+       Serial.println(data.roll);
+       now = millis();
+
+       delay(50);
+     */
+}
 
 void setup(){
 
     Serial.begin(115200);
-    
+
     delay(1000);
 
-    // Radio config
-    radio.begin();
-    radio.openReadingPipe(1, pipeIn);
-    radio.startListening();
+    DataReset();
 
-    // DataReset();
+    WiFi.mode(WIFI_STA);
 
-    Serial.println("Radio started...");
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW...");
+        return;
+    }
+
+    // Does things on callback (when data is sent over)
+    esp_now_register_recv_cb(OnDataRecv);
+
+    Serial.println("Setup complete...");
 }
 
 
 int lastRecv = 0;
 
 void loop(){
-
-    /*
-    int now = millis();
-
-    if (now - lastRecv > 1000){
+    now = millis() / 1000;
+    if (now > NxtRcv){
         DataReset();
-    }
-
-    if (radio.available()){
-        radio.read(&data, sizeof(data));
-        lastRecv = millis();
-    }
-
-    Throttle = data.throttle;
-    Pitch = data.pitch;
-    Roll = data.roll;
-    Yaw = data.yaw;
-
-    Serial.println(data.throttle);
-
-    Serial.print("Throttle: ");
-    Serial.println(Throttle);
-
-    Serial.print("Pitch: ");
-    Serial.println(Pitch);
-
-    Serial.print("Roll: ");
-    Serial.println(Roll);
-
-    Serial.print("Yaw: ");
-    Serial.println(Yaw);
-    */
-
-    char txt[32] = {0};
-    
-    Serial.println(txt);
-
-    while(radio.available()){
-        radio.read(&txt, sizeof(txt));
-        Serial.println(txt);
-        delay(100);
-    }
-
-    if(radio.available() != true){
-        Serial.println("no fucking signal");
-        delay(100);
+        Serial.println("Connection lost, data has been reset...");
+        delay(500);
     }
 }

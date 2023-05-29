@@ -1,28 +1,18 @@
 #include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
-
+#include "WiFi.h"
+#include <esp_now.h>
 
 
 /*
-left stick:
-    X-axis = D35 (throttle)
-    Y-axis = D34 (yaw)
+   left stick:
+   X-axis = D35 (throttle)
+   Y-axis = D34 (yaw)
 
-right stick:
-    X-axis = D33 (pitch)
-    Y-axis = D32 (roll)
+   right stick:
+   X-axis = D33 (pitch)
+   Y-axis = D32 (roll)
 
-transmitter pins:
-1 ground
-2 3.3V Note (10uF cap across ground and 3.3V)
-3 (CE) 22
-4 (CSN) 21
-5 (SCK) 18
-6 (MOSI) 23
-7 (MISO) 19
 */
-
 
 #define LeftXPIN 35
 #define LeftYPIN 34
@@ -35,15 +25,10 @@ int Throttle = 0;
 int Roll = 0;
 int Pitch = 0;
 
-#define CEpin 22
-#define CSNpin 21
-#define SCKpin 18
-#define MOSIpin 23
-#define MISOpin 19
+#define LED 18
 
-
-const byte pipeOut = 2006;
-RF24 radio(CEpin, CSNpin);
+uint8_t broadcastAddress[] =  {0xB0, 0xB2, 0x1C, 0x0B, 0x01, 0x94};
+esp_now_peer_info_t peerInfo;
 
 // Setting up what the signal would look like
 struct Signal {
@@ -53,8 +38,6 @@ struct Signal {
     byte yaw;
 };
 
-// Variable using the data struct of Signal
-/*
 Signal data;
 
 
@@ -65,7 +48,6 @@ void DataReset(){
     data.yaw = 128;
 }
 
-*/
 
 
 void setup(){
@@ -76,18 +58,34 @@ void setup(){
 
     pinMode(LeftXPIN, INPUT);
     pinMode(LeftYPIN, INPUT);
-    
+
+    pinMode(LED, OUTPUT);
+
+    WiFi.mode(WIFI_STA);
+
+    // Initialize ESP-NOW
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW");
+        return;
+    }
+
+    // Register the send callback
+
+    // Register peer
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0; 
+    peerInfo.encrypt = false;
+
+    // Add peer        
+    if (esp_now_add_peer(&peerInfo) != ESP_OK){
+        Serial.println("Failed to add peer");
+        return;
+    }
+
     delay(3000);
 
-
-    radio.begin();
-
-    // Radio config
-
-    radio.begin();
-    radio.openWritingPipe(pipeOut);
-
-    Serial.println("Radio started...");
+    digitalWrite(LED, HIGH);
+    Serial.println("Setup complete...");
 }
 
 
@@ -101,12 +99,13 @@ void loop(){
     Roll = map(analogRead(RightYPIN), 0, 4095, 0, 255);
     Pitch = map(analogRead(RightXPIN), 0, 4095, 0, 255);
 
-    /*
     data.throttle = Throttle;
     data.pitch = Pitch;
     data.roll = Roll;
     data.yaw = Yaw;
 
+
+    /*
     Serial.print("Throttle: ");
     Serial.println(data.throttle);
 
@@ -120,11 +119,8 @@ void loop(){
     Serial.println(data.roll);
     */
 
-    char txt[] = "Hello World"; 
+    esp_now_send(broadcastAddress, (uint8_t *) &data, sizeof(Signal));
 
-    radio.write(&txt, sizeof(txt));
-
-    Serial.println("sent shit");
-
-    delay(300);
+    delay(50);
 }
+
