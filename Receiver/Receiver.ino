@@ -1,32 +1,33 @@
 #include <SPI.h>
 #include "WiFi.h"
 #include <esp_now.h>
+#include <Servo.h>
 
 
 /*
-   left stick:
-   X-axis = D35 (throttle)
-   Y-axis = D34 (yaw)
-
-   right stick:
-   X-axis = D33 (pitch)
-   Y-axis = D32 (roll)
-
-   transmitter pins:
-   1 ground
-   2 3.3V Note (10uF cap across ground and 3.3V)
-   3 (CE) 22   MAYBE 17
-   4 (CSN) 21  MAYBE 5
-   5 (SCK) 18
-   6 (MOSI) 23
-   7 (MISO) 19
+   throttle = D5
+   pitch = D18
+   roll = D19
+   yaw = D21
  */
 
 
-int Throttle = 0;
+int Throttle = 128;
 int Roll = 128;
 int Pitch = 128;
 int Yaw = 128;
+
+
+Servo Tservo;
+Servo Pservo;
+Servo Rservo;
+Servo Yservo;
+
+int TPos = 0; // Throttle PWM output
+int PPos = 0; // Pitch PWM output
+int RPos = 0; // Roll PWM output
+int YPos = 0; // Yaw PWM output
+
 
 unsigned long now;
 unsigned long LastRec;
@@ -45,7 +46,7 @@ Signal data;
 
 // To run if signal is lost
 void DataReset(){
-    data.throttle = 0;
+    data.throttle = 128;
     data.pitch = 128;
     data.roll = 128;
     data.yaw = 128;
@@ -61,26 +62,24 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     Pitch = data.pitch;
     Roll = data.roll;
     Yaw = data.yaw;
-    
+
     LastRec = millis() / 1000;
     NxtRcv = LastRec + 3;
+/*
+    Serial.print("Throttle: ");
+    Serial.println(data.throttle);
 
-    /*
-       Serial.print("Throttle: ");
-       Serial.println(data.throttle);
+    Serial.print("Yaw: ");
+    Serial.println(data.yaw);
 
-       Serial.print("Yaw: ");
-       Serial.println(data.yaw);
+    Serial.print("Pitch: ");
+    Serial.println(data.pitch);
 
-       Serial.print("Pitch: ");
-       Serial.println(data.pitch);
+    Serial.print("Roll: ");
+    Serial.println(data.roll);
+*/
 
-       Serial.print("Roll: ");
-       Serial.println(data.roll);
-       now = millis();
-
-       delay(50);
-     */
+    now = millis();
 }
 
 void setup(){
@@ -88,6 +87,11 @@ void setup(){
     Serial.begin(115200);
 
     delay(1000);
+
+    Tservo.attach(5);
+    Pservo.attach(18);
+    Rservo.attach(19);
+    Yservo.attach(21);
 
     DataReset();
 
@@ -114,4 +118,16 @@ void loop(){
         Serial.println("Connection lost, data has been reset...");
         delay(500);
     }
+
+    TPos = map(data.throttle, 0, 255, 0, 180);  // pin D4 (PWM signal)
+    PPos = map(data.pitch, 0, 255, 0, 180);     // pin D3 (PWM signal)
+    RPos = map(data.roll, 0, 255, 0, 180);      // pin D2 (PWM signal)
+    YPos = map(data.yaw, 0, 255, 0, 180);       // pin D5 (PWM signal)
+
+    Serial.println(RPos);
+
+    Tservo.write(TPos);
+    Pservo.write(PPos);
+    Rservo.write(RPos);
+    Yservo.write(YPos);
 }
