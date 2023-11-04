@@ -11,19 +11,18 @@
    right stick:
    X-axis = D33 (pitch)
    Y-axis = D32 (roll)
-
 */
 
-#define LeftXPIN 35
-#define LeftYPIN 34
-int Yaw = 0;
+#define ThrottlePIN 35
+#define YawPIN 34
 int Throttle = 0;
+int Yaw = 0;
 
 
-#define RightXPIN 33
-#define RightYPIN 32
-int Roll = 0;
+#define PitchPIN 33
+#define RollPIN 32
 int Pitch = 0;
+int Roll = 0;
 
 #define LED 18
 
@@ -41,23 +40,14 @@ struct Signal {
 Signal data;
 
 
-void DataReset(){
-    data.throttle = 128;
-    data.pitch = 128;
-    data.roll = 128;
-    data.yaw = 128;
-}
-
-
-
 void setup(){
     Serial.begin(115200);
 
-    pinMode(RightXPIN, INPUT);
-    pinMode(RightYPIN, INPUT);
+    pinMode(PitchPIN, INPUT);
+    pinMode(RollPIN, INPUT);
 
-    pinMode(LeftXPIN, INPUT);
-    pinMode(LeftYPIN, INPUT);
+    pinMode(ThrottlePIN, INPUT);
+    pinMode(YawPIN, INPUT);
 
     pinMode(LED, OUTPUT);
 
@@ -79,10 +69,10 @@ void setup(){
     // Add peer        
     if (esp_now_add_peer(&peerInfo) != ESP_OK){
         Serial.println("Failed to add peer");
-        return;
+	return;
     }
 
-    delay(3000);
+    delay(1000);
 
     digitalWrite(LED, HIGH);
     Serial.println("Setup complete...");
@@ -91,36 +81,44 @@ void setup(){
 
 
 void loop(){
-    // map({pin}, {min_value}, {max_value}, 0, 255)
+	// map({pin}, {min_value}, {max_value}, 0, 255)
 
-    Throttle = map(analogRead(LeftXPIN), 0, 4095, 0, 255);
-    Yaw = map(analogRead(LeftYPIN), 0, 4095, 0, 255);
+	Throttle = analogRead(ThrottlePIN);
+	Throttle = map(Throttle, 0, 4095, 0, 180);
 
-    Roll = map(analogRead(RightYPIN), 0, 4095, 0, 255);
-    Pitch = map(analogRead(RightXPIN), 0, 4095, 0, 255);
+	Roll = analogRead(RollPIN);
+	Roll = map(Roll, 0, 4095, 0, 180);
 
-    data.throttle = Throttle;
-    data.pitch = Pitch;
-    data.roll = Roll;
-    data.yaw = Yaw;
+	Pitch = analogRead(PitchPIN);
+	Pitch = map(Pitch, 0, 4095, 0, 180);
+
+	Yaw = analogRead(YawPIN);
+	Yaw = map(Yaw, 0, 4095, 0, 180);
 
 
-    /*
-    Serial.print("Throttle: ");
-    Serial.println(data.throttle);
+	// Reversing the pitch
+	// Pitch = 255 - Pitch;
 
-    Serial.print("Yaw: ");
-    Serial.println(data.yaw);
+	//constrain(Pitch, 45, 135);
 
-    Serial.print("Pitch: ");
-    Serial.println(data.pitch);
+	Serial.print("Pitch: ");
+	Serial.println(Pitch);
 
-    Serial.print("Roll: ");
-    Serial.println(data.roll);
-    */
+	Serial.print("Roll: ");
+	Serial.println(Roll);
 
-    esp_now_send(broadcastAddress, (uint8_t *) &data, sizeof(Signal));
+	Serial.print("Yaw: ");
+	Serial.println(Yaw);
 
-    delay(50);
+	Serial.print("Throttle: ");
+	Serial.println(Throttle);
+
+	data.throttle = Throttle;
+	data.pitch = Pitch;
+	data.roll = Roll;
+	data.yaw = Yaw;
+
+	esp_now_send(broadcastAddress, (uint8_t *) &data, sizeof(Signal));
+
+	delay(50);
 }
-
