@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include "WiFi.h"
 #include <esp_now.h>
-#include <Servo.h>
+#include <ESP32Servo.h>
 
 
 /*
@@ -12,16 +12,16 @@
  */
 
 
-int Throttle = 128;
-int Roll = 128;
-int Pitch = 128;
-int Yaw = 128;
+int Throttle = 80;
+int Roll = 83;
+int Pitch = 80;
+int Yaw = 83;
 
 
-Servo Tservo;
-Servo Pservo;
-Servo Rservo;
-Servo Yservo;
+Servo Tservo; // Throttle
+Servo Pservo; // Pitch
+Servo Rservo; // Roll
+Servo Yservo; // Yaw
 
 int TPos = 0; // Throttle PWM output
 int PPos = 0; // Pitch PWM output
@@ -46,10 +46,10 @@ Signal data;
 
 // To run if signal is lost
 void DataReset(){
-    data.throttle = 128;
-    data.pitch = 128;
-    data.roll = 128;
-    data.yaw = 128;
+    data.throttle = 90;
+    data.pitch = 0;
+    data.roll = 90;
+    data.yaw = 90;
 }
 
 
@@ -86,7 +86,7 @@ void setup(){
 
     Serial.begin(115200);
 
-    delay(1000);
+    delay(500);
 
     Tservo.attach(5);
     Pservo.attach(18);
@@ -104,8 +104,6 @@ void setup(){
 
     // Does things on callback (when data is sent over)
     esp_now_register_recv_cb(OnDataRecv);
-
-    Serial.println("Setup complete...");
 }
 
 
@@ -119,12 +117,10 @@ void loop(){
         delay(500);
     }
 
-    TPos = map(data.throttle, 0, 255, 0, 180);  // pin D4 (PWM signal)
-    PPos = map(data.pitch, 0, 255, 0, 180);     // pin D3 (PWM signal)
-    RPos = map(data.roll, 0, 255, 0, 180);      // pin D2 (PWM signal)
-    YPos = map(data.yaw, 0, 255, 0, 180);       // pin D5 (PWM signal)
-
-    Serial.println(RPos);
+    TPos = data.throttle;  // pin D5 (PWM signal)
+    PPos = data.pitch;     // pin D18 (PWM signal)
+    RPos = data.roll;      // pin D19 (PWM signal)
+    YPos = data.yaw;       // pin D21 (PWM signal)
 
     Tservo.write(TPos);
     Pservo.write(PPos);
