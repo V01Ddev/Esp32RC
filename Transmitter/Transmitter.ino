@@ -26,7 +26,7 @@ int Roll = 0;
 
 #define LED 18
 
-uint8_t broadcastAddress[] =  {0xB0, 0xB2, 0x1C, 0x0B, 0x01, 0x94};
+uint8_t broadcastAddress[] =  {0xA0, 0xB7, 0x65, 0xDD, 0x2D, 0x50};
 esp_now_peer_info_t peerInfo;
 
 // Setting up what the signal would look like
@@ -87,7 +87,7 @@ void loop(){
 	Throttle = map(Throttle, 0, 4095, 0, 180);
 
 	Roll = analogRead(RollPIN);
-	Roll = map(Roll, 0, 4095, 0, 180);
+	Roll = map(Roll, 0, 4095, 180, 0);
 
 	Pitch = analogRead(PitchPIN);
 	Pitch = map(Pitch, 0, 4095, 0, 180);

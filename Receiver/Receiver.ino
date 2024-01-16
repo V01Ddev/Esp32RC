@@ -47,7 +47,7 @@ Signal data;
 // To run if signal is lost
 void DataReset(){
     data.throttle = 90;
-    data.pitch = 0;
+    data.pitch = 90;
     data.roll = 90;
     data.yaw = 90;
 }
@@ -65,7 +65,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
     LastRec = millis() / 1000;
     NxtRcv = LastRec + 3;
-/*
+
     Serial.print("Throttle: ");
     Serial.println(data.throttle);
 
@@ -77,7 +77,6 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
     Serial.print("Roll: ");
     Serial.println(data.roll);
-*/
 
     now = millis();
 }
